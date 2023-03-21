@@ -36,6 +36,13 @@
         <li>Staff</li>
         {% if perms.catalog.can_mark_returned %}
           <li><a href="{% url 'all-borrowed' %}">All borrowed</a></li>
+
+          <!-- Challenge for url binding of catalog/author/create -->
+          <li><a href="{% url 'author-create' %}">Create Author</a></li>
+
+          <!-- Challenge for url binding of catalog/author/create -->
+          <li><a href="{% url 'book-create' %}">Create Book</a></li>
+
         {% endif %}
         </ul>
           {% endif %}
