@@ -2,18 +2,28 @@ from django.db import models
 
 # Create your models here.
 
-from django.urls import reverse # Used to generate URLs by reversing the URL patterns
+from django.urls import reverse  # To generate URLS by reversing URL patterns
 
-from django.contrib.auth.models import User
-
-from datetime import date
 
 class Genre(models.Model):
-    """Model representing a book genre."""
-    name = models.CharField(max_length=200, help_text='Enter a book genre (e.g. Science Fiction)')
+    """Model representing a book genre (e.g. Science Fiction, Non Fiction)."""
+    name = models.CharField(
+        max_length=200,
+        help_text="Enter a book genre (e.g. Science Fiction, French Poetry etc.)"
+    )
 
     def __str__(self):
-        """String for representing the Model object."""
+        """String for representing the Model object (in Admin site etc.)"""
+        return self.name
+
+
+class Language(models.Model):
+    """Model representing a Language (e.g. English, French, Japanese, etc.)"""
+    name = models.CharField(max_length=200,
+                            help_text="Enter the book's natural language (e.g. English, French, Japanese etc.)")
+
+    def __str__(self):
+        """String for representing the Model object (in Admin site etc.)"""
         return self.name
 
 
@@ -29,6 +39,9 @@ class Book(models.Model):
                             help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn'
                                       '">ISBN number</a>')
     genre = models.ManyToManyField(Genre, help_text="Select a genre for this book")
+    # ManyToManyField used because a genre can contain many books and a Book can cover many genres.
+    # Genre class has already been defined so we can specify the object above.
+    language = models.ForeignKey('Language', on_delete=models.SET_NULL, null=True)
 
     class Meta:
         ordering = ['title', 'author']
@@ -48,11 +61,16 @@ class Book(models.Model):
         return self.title
 
 
-import uuid # Required for unique book instances
+import uuid  # Required for unique book instances
+from datetime import date
+
+from django.contrib.auth.models import User  # Required to assign User as a borrower
+
 
 class BookInstance(models.Model):
     """Model representing a specific copy of a book (i.e. that can be borrowed from the library)."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, help_text='Unique ID for this particular book across whole library')
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                          help_text="Unique ID for this particular book across whole library")
     book = models.ForeignKey('Book', on_delete=models.RESTRICT, null=True)
     imprint = models.CharField(max_length=200)
     due_back = models.DateField(null=True, blank=True)
@@ -60,11 +78,11 @@ class BookInstance(models.Model):
 
     @property
     def is_overdue(self):
-        """Determine if the book is overdue based on date and current date"""
-        return bool(self.due_back  and date.today() > self.due_back)
+        """Determines if the book is overdue based on due date and current date."""
+        return bool(self.due_back and date.today() > self.due_back)
 
     LOAN_STATUS = (
-        ('m', 'Maintenance'),
+        ('d', 'Maintenance'),
         ('o', 'On loan'),
         ('a', 'Available'),
         ('r', 'Reserved'),
@@ -74,9 +92,8 @@ class BookInstance(models.Model):
         max_length=1,
         choices=LOAN_STATUS,
         blank=True,
-        default='m',
-        help_text='Book availability',
-    )
+        default='d',
+        help_text='Book availability')
 
     class Meta:
         ordering = ['due_back']
@@ -85,7 +102,6 @@ class BookInstance(models.Model):
     def __str__(self):
         """String for representing the Model object."""
         return '{0} ({1})'.format(self.id, self.book.title)
-
 
 
 class Author(models.Model):
